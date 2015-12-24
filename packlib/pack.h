@@ -5,13 +5,13 @@
 extern "C" {
 #endif 
 
-extern BOOL WINAPI zipFile2PackFile( const char* , const char* );
+extern bool __stdcall zipFile2PackFile( const char* , const char* );
 
-extern BOOL WINAPI exZipFile( const char* , const char* , unsigned char ** , unsigned long *);
+extern bool __stdcall exZipFile( const char* , const char* , unsigned char ** , unsigned long *);
 
-extern void WINAPI freeExtfileBuf( const char* );
+extern void __stdcall freeExtfileBuf( const char* );
 
-extern void WINAPI freeBuf(const unsigned char*);
+extern void __stdcall freeBuf(const unsigned char*);
 
 #ifdef __cplusplus
 }

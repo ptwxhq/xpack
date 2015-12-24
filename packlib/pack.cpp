@@ -4,9 +4,9 @@
 
 
 
- BOOL WINAPI zipFile2PackFile( const char* srcPath , const char* destZipfile)
+ bool __stdcall zipFile2PackFile( const char* srcPath , const char* destZipfile)
 {
-	BOOL bRet = FALSE;
+	bool bRet = false;
 	CZFile zfile;
 #ifdef _UNICODE
 	WCHAR szPath[MAX_PATH] , szDestZip[MAX_PATH];
@@ -21,9 +21,9 @@
 }
 
 
- BOOL WINAPI exZipFile( const char* zipfile, const char* relafile, unsigned char ** buf, unsigned long * len)
+ bool __stdcall exZipFile( const char* zipfile, const char* relafile, unsigned char ** buf, unsigned long * len)
  {
-	 BOOL bRet = FALSE;
+	 bool bRet = false;
 	 CZFile zfile;
 #ifdef _UNICODE
 	 WCHAR szZipFile[MAX_PATH] , szRelaFile[MAX_PATH];
@@ -37,12 +37,12 @@
 	 return bRet;
  }
 
- void WINAPI freeExtfileBuf( const char* buf )
+ void __stdcall freeExtfileBuf( const char* buf )
  {
 	delete[] buf;
  }
 
- void WINAPI freeBuf(const unsigned char* buf)
+ void __stdcall freeBuf(const unsigned char* buf)
  {
 	 delete[] buf;
  }
