@@ -1,0 +1,10 @@
+LIBRARY	"packlib"
+;file or directory pack to zipfile
+
+VERSION 1.0
+
+EXPORTS
+		zipFile2PackFile			@1
+		exZipFile					@2
+		freeExtfileBuf				@3
+		freeBuf						@4

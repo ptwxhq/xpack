@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xpack", "xpack\xpack.vcxproj", "{75B245BF-344C-4001-ABB3-50A3BB69A64B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{891DB699-B9FC-4D00-96A8-6B0E8E5BF467} = {891DB699-B9FC-4D00-96A8-6B0E8E5BF467}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "packlib", "packlib\packlib.vcxproj", "{891DB699-B9FC-4D00-96A8-6B0E8E5BF467}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{75B245BF-344C-4001-ABB3-50A3BB69A64B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{75B245BF-344C-4001-ABB3-50A3BB69A64B}.Debug|Win32.Build.0 = Debug|Win32
+		{75B245BF-344C-4001-ABB3-50A3BB69A64B}.Release|Win32.ActiveCfg = Release|Win32
+		{75B245BF-344C-4001-ABB3-50A3BB69A64B}.Release|Win32.Build.0 = Release|Win32
+		{891DB699-B9FC-4D00-96A8-6B0E8E5BF467}.Debug|Win32.ActiveCfg = Debug|Win32
+		{891DB699-B9FC-4D00-96A8-6B0E8E5BF467}.Debug|Win32.Build.0 = Debug|Win32
+		{891DB699-B9FC-4D00-96A8-6B0E8E5BF467}.Release|Win32.ActiveCfg = Release|Win32
+		{891DB699-B9FC-4D00-96A8-6B0E8E5BF467}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
