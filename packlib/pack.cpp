@@ -31,7 +31,7 @@
 	 MultiByteToWideChar( CP_ACP , 0 , relafile , -1 , szRelaFile , MAX_PATH );
 	 bRet = zfile.ExtractFile( szZipFile , szRelaFile , buf , len );
 #else
-	 bRet = zfile.BuildFile( zipfile , relafile , buf , len);
+	 bRet = zfile.ExtractFile( zipfile , relafile , buf , len);
 #endif
 
 	 return bRet;
