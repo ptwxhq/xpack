@@ -21,15 +21,15 @@
 }
 
 
- bool __stdcall exZipFile( const char* zipfile, const char* relafile, unsigned char ** buf, unsigned long * len)
+ bool __stdcall exZipFile( const WCHAR* zipfile, const WCHAR* relafile, unsigned char ** buf, unsigned long * len)
  {
 	 bool bRet = false;
 	 CZFile zfile;
 #ifdef _UNICODE
-	 WCHAR szZipFile[MAX_PATH] , szRelaFile[MAX_PATH];
-	 MultiByteToWideChar( CP_ACP , 0 , zipfile , -1 , szZipFile , MAX_PATH );
-	 MultiByteToWideChar( CP_ACP , 0 , relafile , -1 , szRelaFile , MAX_PATH );
-	 bRet = zfile.ExtractFile( szZipFile , szRelaFile , buf , len );
+	 //WCHAR szZipFile[MAX_PATH] , szRelaFile[MAX_PATH];
+	 //MultiByteToWideChar( CP_ACP , 0 , zipfile , -1 , szZipFile , MAX_PATH );
+	 //MultiByteToWideChar( CP_ACP , 0 , relafile , -1 , szRelaFile , MAX_PATH );
+	 bRet = zfile.ExtractFile( zipfile , relafile , buf , len );
 #else
 	 bRet = zfile.ExtractFile( zipfile , relafile , buf , len);
 #endif
