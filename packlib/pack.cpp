@@ -4,18 +4,18 @@
 
 
 
- bool __stdcall zipFile2PackFile( const char* srcPath , const char* destZipfile)
+ bool __stdcall zipFile2PackFile( const WCHAR* srcPath , const WCHAR* destZipfile)
 {
 	bool bRet = false;
 	CZFile zfile;
-#ifdef _UNICODE
+/*#ifdef _UNICODE
 	WCHAR szPath[MAX_PATH] , szDestZip[MAX_PATH];
 	MultiByteToWideChar( CP_ACP , 0 , srcPath , -1 , szPath , MAX_PATH );
 	MultiByteToWideChar( CP_ACP , 0 , destZipfile , -1 , szDestZip , MAX_PATH );
 	bRet = zfile.BuildFile( szPath , szDestZip);
-#else
+#else*/
 	bRet = zfile.BuildFile( srcPath , destZipfile);
-#endif
+//#endif
 	
 	return bRet;
 }
