@@ -6,7 +6,7 @@
 
 #pragma comment (lib , "zdll.lib")
 
-const char zip_head[]={"xpack"};
+const char zip_head[]={"xpack_2"};
 
 CZFile::CZFile()
 {
@@ -124,32 +124,34 @@ BOOL CZFile::WritePackFile(const TCHAR *zipfile)
 		if ( file )
 		{	
 			//获取相对路径
-			WideCharToMultiByte( CP_ACP , 0 , it->szFilePath+rela_pos , -1 ,
-				it->item.relapath , MAX_PATH , NULL , FALSE );
+			//WideCharToMultiByte( CP_ACP , 0 , it->szFilePath+rela_pos , -1 ,
+			//	it->item.relapath , MAX_PATH , NULL , FALSE );
+			wcsncpy_s( it->item.relapath, it->szFilePath+rela_pos, MAX_PATH );
 			if ( it->item.relapath[0] == '\0' )
 			{
-				strcpy( it->item.relapath , "\\" );
+				wcscpy_s( it->item.relapath , L"\\" );
 			}
 
 			//获取文件名
 			TCHAR *ch =  _tcsrchr( it->szFilePath , '\\' );
-			WideCharToMultiByte( CP_ACP , 0 , ch+1 , -1 ,
-				it->item.filename , MAX_PATH , NULL , FALSE );
+			//WideCharToMultiByte( CP_ACP , 0 , ch+1 , -1 ,
+			//	it->item.filename , MAX_PATH , NULL , FALSE );
+			wcscpy_s( it->item.filename, ch+1 );
 
 			//获取父节点名
-			char szfindnode[MAX_PATH] = {0};
-			strcpy( szfindnode , it->item.relapath );
-			char * prvch = strrchr(szfindnode , '\\');
+			WCHAR szfindnode[MAX_PATH] = {0};
+			wcscpy_s( szfindnode , it->item.relapath );
+			WCHAR * prvch = wcsrchr(szfindnode , '\\');
 			if ( prvch != szfindnode )
 			{
 				*prvch = '\0';
-				char *prvch2 = strrchr( szfindnode , '\\' );
+				WCHAR *prvch2 = wcsrchr( szfindnode , '\\' );
 				if ( prvch2 )
 				{
-					strcpy( it->item.parent , prvch2+1 );
+					wcscpy_s( it->item.parent , prvch2+1 );
 				}				
 			}else{
-				strcpy( it->item.parent , "\\" );
+				wcscpy_s( it->item.parent , L"\\" );
 			}
 
 			struct stat fdesc;
@@ -247,13 +249,15 @@ BOOL CZFile::ExtractFile( const TCHAR *zipfile , const TCHAR *relafile , unsigne
 		return FALSE;
 	}
 	
-	char szrelafile[MAX_PATH];
+	/*
+	WCHAR szrelafile[MAX_PATH] = {0};
 #ifdef _UNICODE
-	WideCharToMultiByte( CP_ACP , 0 , relafile , -1 , szrelafile , MAX_PATH , NULL , FALSE );
+	//WideCharToMultiByte( CP_ACP , 0 , relafile , -1 , szrelafile , MAX_PATH , NULL , FALSE );
+	wcsncpy_s( szrelafile, relafile, MAX_PATH );
 #else
 	strncpy( szrelafile , relafile );
 #endif
-
+	*/
 	DWORD dwFileItem = 0;
 	fread( &dwFileItem , 1 , sizeof(dwFileItem) , fp);
 
@@ -269,7 +273,7 @@ BOOL CZFile::ExtractFile( const TCHAR *zipfile , const TCHAR *relafile , unsigne
 		fread( &item.complen , 1 , sizeof(item.complen) , fp );
 		fread( item.desc , 1 , sizeof(item.desc) , fp );
 
-		if ( stricmp( szrelafile , item.relapath ) == 0 )
+		if ( wcsicmp( relafile , item.relapath ) == 0 )
 		{
 			*len = item.filelen;
 			*outbuf = new unsigned char[*len + 8];

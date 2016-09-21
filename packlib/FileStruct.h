@@ -8,13 +8,13 @@
 struct zFileItem
 {
 	/*文件名*/
-	char filename[MAX_PATH];
+	WCHAR filename[MAX_PATH];
 
 	/*相对路径*/
-	char relapath[MAX_PATH];
+	WCHAR relapath[MAX_PATH];
 
 	/*父节点*/
-	char parent[MAX_PATH];
+	WCHAR parent[MAX_PATH];
 
 	/*文件原始大小*/
 	DWORD filelen;
