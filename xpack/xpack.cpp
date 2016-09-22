@@ -8,6 +8,12 @@
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	if ( argc > 2 )
+	{
+		zipFile2PackFile( argv[1] , argv[2]);
+		return 0;
+	}	
+
 	zipFile2PackFile( L"d:\\test士大121夫  (231)" , L"d:\\界面1.pack");
 
 	unsigned char *buf = NULL;
