@@ -21,7 +21,7 @@ CZFile::~CZFile()
 BOOL CZFile::BuildFile( const TCHAR *path , const TCHAR *zipfile)
 {
 	BOOL bRet = TRUE;
-	_tcsncpy( m_rootPath , path , MAX_PATH );
+	_tcsncpy_s( m_rootPath , path , MAX_PATH );
 	
 	//获取属性
 	struct _stat statbuf;
@@ -52,13 +52,13 @@ BOOL CZFile::Traversal( const TCHAR *path )
 {
 	TCHAR szFileMask[MAX_PATH]={0};
 	WIN32_FIND_DATA fd;
-	_tcsncpy( szFileMask , path , MAX_PATH );
+	_tcsncpy_s( szFileMask , path , MAX_PATH );
 	int last = _tcslen(szFileMask);
 	if ( szFileMask[last] != '\\' )
 	{
-		_tcscat( szFileMask , _T("\\") );
+		_tcscat_s( szFileMask , _T("\\") );
 	}
-	_tcscat(szFileMask , _T("*.*"));
+	_tcscat_s(szFileMask , _T("*.*"));
 	
 	HANDLE hFile = FindFirstFile( szFileMask, &fd);
 	if (hFile == INVALID_HANDLE_VALUE)
@@ -68,7 +68,7 @@ BOOL CZFile::Traversal( const TCHAR *path )
 	do 
 	{
 		TCHAR szPath[MAX_PATH]={0};
-		_stprintf( szPath , _T("%s\\%s") , path , fd.cFileName );
+		_stprintf_s( szPath , _T("%s\\%s") , path , fd.cFileName );
 		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){			
 			if ( _tcscmp( fd.cFileName , _T(".") ) && _tcscmp( fd.cFileName , _T("..") ) )
 			{								
@@ -100,7 +100,8 @@ BOOL CZFile::WritePackFile(const TCHAR *zipfile)
 	BOOL bRet = TRUE;
 	int rela_pos = _tcslen( m_rootPath );
 	FileList::iterator it = m_files.begin();
-	FILE* fzip = _tfopen( zipfile , _T("wb") );
+	FILE* fzip = NULL;
+	_tfopen_s(&fzip, zipfile , _T("wb") );
 	if ( !fzip )
 	{
 		return FALSE;
@@ -111,7 +112,7 @@ BOOL CZFile::WritePackFile(const TCHAR *zipfile)
 	char * szfhead = new char[ fhead_len ];
 	memset( szfhead , 0 , fhead_len );
 	//文件头标识
-	strcpy( szfhead , zip_head );
+	strcpy_s( szfhead , fhead_len, zip_head );
 	//共打包了多少文件
 	memcpy( szfhead + strlen(zip_head)+1 , &filesum  , sizeof(filesum) );
 	fwrite( szfhead , 1 , fhead_len , fzip );
@@ -120,7 +121,8 @@ BOOL CZFile::WritePackFile(const TCHAR *zipfile)
 	int idx = 0;
 	for ( ; it != m_files.end() ; ++it , ++idx )
 	{
-		FILE * file = _tfopen( it->szFilePath , _T("rb") );
+		FILE * file = NULL;
+		_tfopen_s(&file, it->szFilePath , _T("rb") );
 		if ( file )
 		{	
 			//获取相对路径
@@ -235,7 +237,8 @@ BOOL CZFile::ExtractFile( const TCHAR *zipfile , const TCHAR *relafile , unsigne
 		return FALSE;
 	}
 
-	FILE *fp = _tfopen( zipfile , _T("rb") );
+	FILE *fp = NULL;
+	_tfopen_s(&fp, zipfile , _T("rb") );
 	if ( fp == NULL )
 	{
 		return FALSE;
@@ -273,7 +276,7 @@ BOOL CZFile::ExtractFile( const TCHAR *zipfile , const TCHAR *relafile , unsigne
 		fread( &item.complen , 1 , sizeof(item.complen) , fp );
 		fread( item.desc , 1 , sizeof(item.desc) , fp );
 
-		if ( wcsicmp( relafile , item.relapath ) == 0 )
+		if ( _wcsicmp( relafile , item.relapath ) == 0 )
 		{
 			*len = item.filelen;
 			*outbuf = new unsigned char[*len + 8];

@@ -33,7 +33,7 @@ struct zFileItem
 		memset( relapath , 0 , sizeof(relapath) );
 		memset( parent , 0 , sizeof(parent) );
 		memset( desc , 0 , sizeof(desc) );
-		strcpy( desc , "desc_fin" );
+		strcpy_s( desc , "desc_fin" );
 		filelen = INVALID_NUM;
 		offset = INVALID_NUM;
 		complen = INVALID_NUM;
@@ -45,7 +45,7 @@ struct ZipItemFile{
 	TCHAR szFilePath[MAX_PATH];
 	zFileItem item;
 	ZipItemFile( const TCHAR* szFile ){
-		_tcsncpy( szFilePath , szFile , MAX_PATH );
+		_tcsncpy_s( szFilePath , szFile , MAX_PATH );
 	}
 };
 
