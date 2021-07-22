@@ -1,45 +1,51 @@
 #include "common.h"
 #include "FileStruct.h"
 #include <zlib.h>
-#include<sys/stat.h>
+#include <sys/stat.h>
+#include <algorithm>
+#include <atlconv.h>
 
 
-#pragma comment (lib , "zdll.lib")
+
+//#pragma comment (lib , "zdll.lib")
 
 const char zip_head[]={"xpack_2"};
+const char zip_headv1[] = { "xpack" };
 
 CZFile::CZFile()
 {
-	m_rootPath[0] = '\0';
 }
 
 CZFile::~CZFile()
 {
-
 }
 
 BOOL CZFile::BuildFile( const TCHAR *path , const TCHAR *zipfile)
 {
+	m_buildfiles.clear();
+
+	TCHAR rootPath[MAX_PATH] = {};
+
 	BOOL bRet = TRUE;
-	_tcsncpy_s( m_rootPath , path , MAX_PATH );
+	_tcsncpy_s( rootPath , path , MAX_PATH );
 	
 	//获取属性
 	struct _stat statbuf;
-	if( _tstat( m_rootPath , &statbuf ) == 0 ){
+	if( _tstat( rootPath , &statbuf ) == 0 ){
 		if ( statbuf.st_mode & _S_IFDIR )
 		{
 			//目录
-			int lastch = _tcslen(m_rootPath)-1;
-			if ( m_rootPath[lastch] == '\\' )
+			int lastch = _tcslen(rootPath)-1;
+			if ( rootPath[lastch] == '\\' )
 			{
-				m_rootPath[lastch] = '\0';
+				rootPath[lastch] = '\0';
 			}
-			Traversal(m_rootPath);
+			Traversal(rootPath);
 		}else{
-			ZipItemFile fileitem( m_rootPath );
-			m_files.push_back(fileitem);
+			ZipItemFile fileitem( rootPath );
+			m_buildfiles.push_back(fileitem);
 		}
-		WritePackFile( zipfile );
+		WritePackFile( zipfile, rootPath);
 	}else{
 		bRet = FALSE;
 	}
@@ -76,7 +82,7 @@ BOOL CZFile::Traversal( const TCHAR *path )
 			}			
 		}else{
 			ZipItemFile fileitem( szPath );
-			m_files.push_back(fileitem);						
+			m_buildfiles.push_back(fileitem);						
 		}
 	} while (FindNextFile (hFile, &fd));
 	FindClose (hFile);
@@ -95,11 +101,11 @@ DWORD CZFile::GetOffsetItemDesc( DWORD idx )
 }
 
 
-BOOL CZFile::WritePackFile(const TCHAR *zipfile)
+BOOL CZFile::WritePackFile(const TCHAR *zipfile,TCHAR *rootPath)
 {
 	BOOL bRet = TRUE;
-	int rela_pos = _tcslen( m_rootPath );
-	FileList::iterator it = m_files.begin();
+	int rela_pos = _tcslen( rootPath );
+	FileList::iterator it = m_buildfiles.begin();
 	FILE* fzip = NULL;
 	_tfopen_s(&fzip, zipfile , _T("wb") );
 	if ( !fzip )
@@ -107,7 +113,7 @@ BOOL CZFile::WritePackFile(const TCHAR *zipfile)
 		return FALSE;
 	}
 	//填充文件头
-	DWORD filesum = m_files.size();
+	DWORD filesum = m_buildfiles.size();
 	DWORD  fhead_len = GetHeadLen(filesum);
 	char * szfhead = new char[ fhead_len ];
 	memset( szfhead , 0 , fhead_len );
@@ -119,7 +125,7 @@ BOOL CZFile::WritePackFile(const TCHAR *zipfile)
 	delete []szfhead;
 
 	int idx = 0;
-	for ( ; it != m_files.end() ; ++it , ++idx )
+	for ( ; it != m_buildfiles.end() ; ++it , ++idx )
 	{
 		FILE * file = NULL;
 		_tfopen_s(&file, it->szFilePath , _T("rb") );
@@ -157,7 +163,9 @@ BOOL CZFile::WritePackFile(const TCHAR *zipfile)
 			}
 
 			struct stat fdesc;
-			if( fstat( file->_file , &fdesc ) == 0 )
+			int eno = _fileno(file);
+
+			if( fstat(eno/*file->_file*/ , &fdesc ) == 0 )
 			{
 				//文件大小
 				it->item.filelen = fdesc.st_size;
@@ -297,7 +305,176 @@ BOOL CZFile::ExtractFile( const TCHAR *zipfile , const TCHAR *relafile , unsigne
 	return bRet;
 }
 
-BOOL CZFile::ExtraPackItem( FILE* zipfile , unsigned char *outbuf ,  DWORD* dwOriDataLen , DWORD totalsize , DWORD dwoffset )
+BOOL CZFile::LoadPackFile(const WCHAR* zipfile)
+{
+	BOOL bRet = FALSE;
+	if (!m_xpackData)
+	{
+		FILE* fp;
+		_wfopen_s(&fp, zipfile, L"rb");
+		if (fp)
+		{
+			fseek(fp, 0, SEEK_END);
+			long fsize = ftell(fp);
+			fseek(fp, 0, SEEK_SET);
+
+			if (fsize < 8)
+			{
+				//不是xpack文件
+				fclose(fp);
+				return FALSE;
+			}
+
+			m_xpackData = std::make_unique<unsigned char[]>(fsize);
+			int nRead = 0;
+			fread(m_xpackData.get(), 1, fsize, fp);
+			fclose(fp);
+
+
+			auto pBytePos = m_xpackData.get();
+			
+
+			char szBuf[64];
+			int nHeadTest = strlen(zip_head) + 1;
+			memcpy(szBuf, pBytePos, nHeadTest);
+			if (!strcmp(szBuf, zip_head))
+			{
+				pBytePos += nHeadTest;
+				m_xpackVer = 2;
+				//读取保存基础信息
+				DWORD dwFileItem = 0;
+				memcpy(&dwFileItem, pBytePos, sizeof(dwFileItem));
+				pBytePos += sizeof(dwFileItem);
+
+				DWORD dwidx = 0;
+				for (dwidx = 0; dwidx < dwFileItem; ++dwidx)
+				{
+					auto pItem = std::make_unique<zFileItem>();
+					zFileItem &item = *pItem;
+					memcpy(pItem.get(), pBytePos, sizeof(zFileItem));
+					pBytePos += sizeof(zFileItem);
+
+					std::wstring lowername(item.relapath);
+					std::transform(lowername.begin(), lowername.end(), lowername.begin(), tolower);
+
+					m_ExistData.insert(std::make_pair(lowername, std::move(pItem)));
+				}
+
+				bRet = TRUE;
+			}
+			else if (!strcmp(szBuf, zip_headv1))
+			{
+				pBytePos += strlen(zip_headv1) + 1;
+				m_xpackVer = 1;
+				//读取保存基础信息
+				
+				DWORD dwFileItem = 0;
+				memcpy(&dwFileItem, pBytePos, sizeof(dwFileItem));
+				pBytePos += sizeof(dwFileItem);
+
+				USES_CONVERSION;
+			
+				DWORD dwidx = 0;
+				for (dwidx = 0; dwidx < dwFileItem; ++dwidx)
+				{
+					auto pItem = std::make_unique<zFileItem>();
+					zFileItem& item = *pItem;
+					zFileItemV1 itemV1;
+
+					memcpy(itemV1.filename, pBytePos, sizeof(itemV1.filename));
+					pBytePos += sizeof(itemV1.filename);
+					memcpy(itemV1.relapath, pBytePos, sizeof(itemV1.relapath));
+					pBytePos += sizeof(itemV1.relapath);
+					memcpy(itemV1.parent, pBytePos, sizeof(itemV1.parent));
+					pBytePos += sizeof(itemV1.parent);
+					memcpy(&item.filelen, pBytePos, sizeof(item.filelen));
+					pBytePos += sizeof(item.filelen);
+					memcpy(&item.offset, pBytePos, sizeof(item.offset));
+					pBytePos += sizeof(item.offset);
+					memcpy(&item.complen, pBytePos, sizeof(item.complen));
+					pBytePos += sizeof(item.complen);
+					memcpy(item.desc, pBytePos, sizeof(item.desc));
+					pBytePos += sizeof(item.desc);
+
+					wcscpy_s(item.filename, A2W(itemV1.filename));
+					wcscpy_s(item.relapath, A2W(itemV1.relapath));
+					wcscpy_s(item.parent, A2W(itemV1.parent));
+
+
+					std::wstring lowername = item.relapath;
+					std::transform(lowername.begin(), lowername.end(), lowername.begin(), tolower);
+
+					m_ExistData.insert(std::make_pair(lowername, std::move(pItem)));
+				}
+
+				bRet = TRUE;
+			}
+
+
+			fclose(fp);
+		}
+	}
+
+	return bRet;
+}
+
+BOOL CZFile::GetItemInfo(const WCHAR* relafile, zFileItem** pZip)
+{
+	std::wstring lowername = relafile;
+	std::transform(lowername.begin(), lowername.end(), lowername.begin(), tolower);
+	auto item = m_ExistData.find(lowername);
+	if (item != m_ExistData.end())
+	{
+		*pZip = item->second.get();
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+BOOL CZFile::ExtraPackItem(unsigned char* outbuf, DWORD* dwOriDataLen, DWORD totalsize, DWORD dwoffset)
+{
+	if (!m_xpackData)
+		return FALSE;
+	BOOL bRet = TRUE;
+	
+	auto pBytePos = m_xpackData.get() + dwoffset;
+
+	*dwOriDataLen = 0;
+	DWORD reminlen = totalsize - *dwOriDataLen;
+
+	while (1) {
+		char eof;
+		memcpy(&eof, pBytePos, sizeof(eof));
+		pBytePos += sizeof(eof);
+
+		DWORD dwPackLen = 0;
+		//读取单个压缩包大小
+		memcpy(&dwPackLen, pBytePos, sizeof(dwPackLen));
+		pBytePos += sizeof(dwPackLen);
+
+		if (uncompress(outbuf, &reminlen, pBytePos, dwPackLen))
+		{
+			bRet = FALSE;
+			break;
+		}
+
+		pBytePos += dwPackLen;
+
+		outbuf += reminlen;
+		*dwOriDataLen += reminlen;
+		reminlen = totalsize - *dwOriDataLen;
+
+		if (eof == '1')
+		{
+			break;
+		}
+	}
+
+	return bRet;
+}
+
+BOOL CZFile::ExtraPackItem( FILE* zipfile , unsigned char *outbuf ,  DWORD* dwOriDataLen , DWORD totalsize , DWORD dwoffset)
 {
 	BOOL bRet = TRUE;
 	int offset = fseek( zipfile , dwoffset , SEEK_SET);

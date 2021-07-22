@@ -8,3 +8,7 @@ EXPORTS
 		exZipFile					@2
 		freeExtfileBuf				@3
 		freeBuf						@4
+
+		PreLoadPackFile
+		UnzipExistPackFile
+		CleanLoadedPacks

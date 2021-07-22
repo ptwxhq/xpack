@@ -1,6 +1,8 @@
 #ifndef FILESTRUCT_H
 #define FILESTRUCT_H
-#include <vector>
+
+#include <unordered_map>
+#include <memory>
 
 #define ONCE_PACK_SIZE 4096
 #define PACK_BUF_SIZE ONCE_PACK_SIZE+2048
@@ -40,6 +42,41 @@ struct zFileItem
 	}
 };
 
+struct zFileItemV1
+{
+	/*文件名*/
+	char filename[MAX_PATH];
+
+	/*相对路径*/
+	char relapath[MAX_PATH];
+
+	/*父节点*/
+	char parent[MAX_PATH];
+
+	/*文件原始大小*/
+	DWORD filelen;
+
+	/*压缩文件中的偏移位置*/
+	DWORD offset;
+
+	/*压缩后的大小*/
+	DWORD complen;
+
+	/**/
+	char desc[16];
+
+	zFileItemV1() {
+		memset(filename, 0, sizeof(filename));
+		memset(relapath, 0, sizeof(relapath));
+		memset(parent, 0, sizeof(parent));
+		memset(desc, 0, sizeof(desc));
+		strcpy_s(desc, "desc_fin");
+		filelen = INVALID_NUM;
+		offset = INVALID_NUM;
+		complen = INVALID_NUM;
+	}
+};
+
 struct ZipItemFile{
 
 	TCHAR szFilePath[MAX_PATH];
@@ -70,12 +107,17 @@ public:
 	BOOL BuildFile( const TCHAR *path , const TCHAR *zipfile);
 	BOOL ExtractFile( const TCHAR *zipfile , const TCHAR *relafile , unsigned char **outbuf , DWORD* len );
 	
+	BOOL LoadPackFile(const WCHAR* zipfile);
+
+	BOOL GetItemInfo(const WCHAR* relafile, zFileItem** pZip);
+
+	BOOL ExtraPackItem(unsigned char* outbuf, DWORD* dwOriDataLen, DWORD totalsize, DWORD dwoffset);
 protected:
 	/*遍历文件夹*/
 	BOOL Traversal(const TCHAR *path);
 
 	/*写入打包文件*/
-	BOOL WritePackFile(const TCHAR *zipfile);
+	BOOL WritePackFile(const TCHAR *zipfile, TCHAR* rootPath);
 
 	/*打包文件*/
 	BOOL PackFile( FILE *srcfile , FILE* zipfile , DWORD* dwZipDataLen );
@@ -86,13 +128,17 @@ protected:
 	/*计算压缩文件描述偏移地址*/
 	DWORD GetOffsetItemDesc( DWORD idx );
 
-	BOOL ExtraPackItem( FILE* zipfile , unsigned char *outbuf ,  DWORD* dwOriDataLen  , DWORD totalsize , DWORD dwoffset);
 
+	BOOL ExtraPackItem(FILE* zipfile, unsigned char* outbuf, DWORD* dwOriDataLen, DWORD totalsize, DWORD dwoffset);
 
-	FileList m_files;
+	FileList m_buildfiles;
 
 private:
-	TCHAR m_rootPath[MAX_PATH];
+	int m_xpackVer = 0;
+
+	std::unique_ptr<unsigned char[]> m_xpackData;
+	
+	std::unordered_map<std::wstring, std::unique_ptr< zFileItem>> m_ExistData;
 };
 
 
