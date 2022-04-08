@@ -254,52 +254,86 @@ BOOL CZFile::ExtractFile( const TCHAR *zipfile , const TCHAR *relafile , unsigne
 
 	char szBuf[PACK_BUF_SIZE];
 	fread( szBuf , 1 , strlen(zip_head)+1 , fp );
-	if ( strcmp( szBuf , zip_head ) )
+	if ( !strcmp( szBuf , zip_head ) )
 	{
-		//不是xpack文件
-		return FALSE;
-	}
-	
-	/*
-	WCHAR szrelafile[MAX_PATH] = {0};
-#ifdef _UNICODE
-	//WideCharToMultiByte( CP_ACP , 0 , relafile , -1 , szrelafile , MAX_PATH , NULL , FALSE );
-	wcsncpy_s( szrelafile, relafile, MAX_PATH );
-#else
-	strncpy( szrelafile , relafile );
-#endif
-	*/
-	DWORD dwFileItem = 0;
-	fread( &dwFileItem , 1 , sizeof(dwFileItem) , fp);
+		DWORD dwFileItem = 0;
+		fread(&dwFileItem, 1, sizeof(dwFileItem), fp);
 
-	DWORD dwidx = 0;
-	for ( dwidx = 0 ; dwidx < dwFileItem ; ++dwidx )
-	{
-		zFileItem item;
-		fread( item.filename , 1 , sizeof(item.filename) , fp );
-		fread( item.relapath , 1 , sizeof(item.relapath) , fp );
-		fread( item.parent , 1 , sizeof(item.parent) , fp );
-		fread( &item.filelen , 1 , sizeof(item.filelen) , fp );
-		fread( &item.offset , 1 , sizeof(item.offset) , fp );
-		fread( &item.complen , 1 , sizeof(item.complen) , fp );
-		fread( item.desc , 1 , sizeof(item.desc) , fp );
-
-		if ( _wcsicmp( relafile , item.relapath ) == 0 )
+		DWORD dwidx = 0;
+		for (dwidx = 0; dwidx < dwFileItem; ++dwidx)
 		{
-			*len = item.filelen;
-			*outbuf = new unsigned char[*len + 8];
-			memset(  *outbuf , 0 , *len + 8 );
-			DWORD dwChkLen = 0; //返回实际解压后的大小
-			ExtraPackItem( fp , *outbuf , &dwChkLen , *len , item.offset);
-			if ( dwChkLen != *len )
+			zFileItem item;
+			fread(item.filename, 1, sizeof(item.filename), fp);
+			fread(item.relapath, 1, sizeof(item.relapath), fp);
+			fread(item.parent, 1, sizeof(item.parent), fp);
+			fread(&item.filelen, 1, sizeof(item.filelen), fp);
+			fread(&item.offset, 1, sizeof(item.offset), fp);
+			fread(&item.complen, 1, sizeof(item.complen), fp);
+			fread(item.desc, 1, sizeof(item.desc), fp);
+
+			if (_wcsicmp(relafile, item.relapath) == 0)
 			{
-				bRet = FALSE;
-			}else{
-				bRet = TRUE;
+				*len = item.filelen;
+				*outbuf = new unsigned char[*len + 8];
+				memset(*outbuf, 0, *len + 8);
+				DWORD dwChkLen = 0; //返回实际解压后的大小
+				ExtraPackItem(fp, *outbuf, &dwChkLen, *len, item.offset);
+				if (dwChkLen != *len)
+				{
+					bRet = FALSE;
+				}
+				else {
+					bRet = TRUE;
+				}
+				break;
 			}
-			break;
 		}
 	}
+	else if (!strcmp(szBuf, zip_headv1))
+	{
+		fseek(fp, _countof(zip_headv1) - _countof(zip_head), SEEK_CUR);
+
+		DWORD dwFileItem = 0;
+		fread(&dwFileItem, 1, sizeof(dwFileItem), fp);
+
+		USES_CONVERSION;
+
+		DWORD dwidx = 0;
+		for (dwidx = 0; dwidx < dwFileItem; ++dwidx)
+		{
+			zFileItemV1 item;
+			fread(item.filename, 1, sizeof(item.filename), fp);
+			fread(item.relapath, 1, sizeof(item.relapath), fp);
+			fread(item.parent, 1, sizeof(item.parent), fp);
+			fread(&item.filelen, 1, sizeof(item.filelen), fp);
+			fread(&item.offset, 1, sizeof(item.offset), fp);
+			fread(&item.complen, 1, sizeof(item.complen), fp);
+			fread(item.desc, 1, sizeof(item.desc), fp);
+
+			if (_stricmp(W2A(relafile), item.relapath) == 0)
+			{
+				*len = item.filelen;
+				*outbuf = new unsigned char[*len + 8];
+				memset(*outbuf, 0, *len + 8);
+				DWORD dwChkLen = 0; //返回实际解压后的大小
+				ExtraPackItem(fp, *outbuf, &dwChkLen, *len, item.offset);
+				if (dwChkLen != *len)
+				{
+					bRet = FALSE;
+				}
+				else {
+					bRet = TRUE;
+				}
+				break;
+			}
+		}
+	}
+	else
+	{
+		//不是xpack文件
+	}
+	
+	
 	
 	fclose(fp);
 	return bRet;

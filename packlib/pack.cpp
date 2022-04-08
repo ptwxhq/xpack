@@ -120,14 +120,8 @@ bool __stdcall zipFile2PackFile( const WCHAR* srcPath , const WCHAR* destZipfile
 {
 	bool bRet = false;
 	CZFile zfile;
-/*#ifdef _UNICODE
-	WCHAR szPath[MAX_PATH] , szDestZip[MAX_PATH];
-	MultiByteToWideChar( CP_ACP , 0 , srcPath , -1 , szPath , MAX_PATH );
-	MultiByteToWideChar( CP_ACP , 0 , destZipfile , -1 , szDestZip , MAX_PATH );
-	bRet = zfile.BuildFile( szPath , szDestZip);
-#else*/
+
 	bRet = zfile.BuildFile( srcPath , destZipfile);
-//#endif
 	
 	return bRet;
 }
@@ -135,26 +129,19 @@ bool __stdcall zipFile2PackFile( const WCHAR* srcPath , const WCHAR* destZipfile
 
  bool __stdcall exZipFile( const WCHAR* zipfile, const WCHAR* relafile, unsigned char ** buf, unsigned long * len)
  {
-	 XPackData* test = nullptr;
-	 if (UnzipExistPackFile(zipfile, relafile, &test) == 0)
+	 AUTO_FREE_PACK* test = nullptr;
+	 if (UnzipExistPackFile(zipfile, relafile, (XPackData**)&test) == 0)
 	 {
-		 AUTO_FREE_PACK* pReal = (AUTO_FREE_PACK*)test;
 		 *len = test->GetLen();
-		 pReal->Move(buf);
+		 test->Move(buf);
 		 test->Free();
 		 return true;
 	 }
 
 	 bool bRet = false;
 	 CZFile zfile;
-#ifdef _UNICODE
-	 //WCHAR szZipFile[MAX_PATH] , szRelaFile[MAX_PATH];
-	 //MultiByteToWideChar( CP_ACP , 0 , zipfile , -1 , szZipFile , MAX_PATH );
-	 //MultiByteToWideChar( CP_ACP , 0 , relafile , -1 , szRelaFile , MAX_PATH );
+
 	 bRet = zfile.ExtractFile( zipfile , relafile , buf , len );
-#else
-	 bRet = zfile.ExtractFile( zipfile , relafile , buf , len);
-#endif
 
 	 return bRet;
  }
